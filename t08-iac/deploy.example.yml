@@ -1,0 +1,43 @@
+# Example workflow for your PlaceFinder fork: copy it to
+# .github/workflows/deploy.yml. It builds the image, pushes it to Artifact
+# Registry and deploys a new Cloud Run revision, without a JSON key.
+#
+# Repository variables (from "tofu output" of t08-iac/github-oidc and t08-iac/infra):
+#   GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, GCP_REGION,
+#   IMAGE_REPOSITORY, SERVICE_NAME
+name: deploy
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write   # needed to request the OIDC token
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Authenticate via Workload Identity Federation
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push the image
+        run: |
+          gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+          image="${{ vars.IMAGE_REPOSITORY }}/placefinder:${GITHUB_SHA::12}"
+          docker build -t "$image" .
+          docker push "$image"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Deploy a new Cloud Run revision
+        run: |
+          gcloud run deploy "${{ vars.SERVICE_NAME }}" --image "$IMAGE" \
+            --region "${{ vars.GCP_REGION }}" --quiet

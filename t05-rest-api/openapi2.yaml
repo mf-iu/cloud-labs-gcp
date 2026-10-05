@@ -1,0 +1,39 @@
+# API Gateway configuration (OpenAPI 2.0, as required by Google API Gateway).
+# create-api-gateway.sh replaces __BACKEND__ with the Cloud Run URL.
+swagger: "2.0"
+info:
+  title: placefinder
+  version: "1.0.0"
+schemes:
+  - https
+produces:
+  - application/json
+x-google-backend:
+  address: __BACKEND__
+  path_translation: APPEND_PATH_TO_ADDRESS
+paths:
+  /health:
+    get:
+      operationId: health
+      responses:
+        "200":
+          description: Service is healthy
+  /v1/places:
+    get:
+      operationId: searchPlaces
+      responses:
+        "200":
+          description: GeoJSON FeatureCollection
+  /v1/places/{id}:
+    get:
+      operationId: getPlace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: GeoJSON Feature
+        "404":
+          description: Unknown place
