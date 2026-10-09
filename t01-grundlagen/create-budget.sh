@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Create a monthly budget for the course project. Google sends e-mails to
-# the billing administrators at 50 % and 80 % of the actual costs and at
+# Create a monthly budget for the whole billing account, so that it covers
+# all projects, not only the course project. Google sends e-mails to the
+# billing administrators at 50 % and 80 % of the actual costs and at
 # 100 % of the forecast. The budget counts costs before credits: during the
 # free trial the credits pay for everything, so a budget with credits would
 # always stay at 0.
@@ -26,7 +27,6 @@ gcloud billing budgets create --billing-account "$billing" \
   --display-name "$budget_name" \
   --budget-amount "$BUDGET_AMOUNT" \
   --credit-types-treatment exclude-all-credits \
-  --filter-projects "projects/$GCP_PROJECT" \
   --threshold-rule percent=0.5 \
   --threshold-rule percent=0.8 \
   --threshold-rule percent=1.0,basis=forecasted-spend

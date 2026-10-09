@@ -17,12 +17,15 @@ Bei Google Cloud gehört jede Ressource zu einem **Projekt**. Rechte vergibt Clo
 Im Terminal des Dev Containers (siehe [README](../README.md#arbeitsumgebung-dev-container)):
 
 ```bash
-cp ../config.example.env ../config.env   # OWNER, BUDGET_AMOUNT usw. eintragen
+cd /workspaces/cloud-labs-gcp/t01-grundlagen   # Ordner dieser Übung
+cp -i ../config.example.env ../config.env      # OWNER, BUDGET_AMOUNT usw. eintragen
 gcloud auth login --no-launch-browser
 gcloud auth application-default login --no-launch-browser
 ./create-project.sh
 ./check-cli.sh
 ```
+
+`cp -i` fragt nach, falls `config.env` schon existiert (z. B. aus der Einrichtung im [README](../README.md#einrichtung)); dann mit `n` antworten und die vorhandene Datei behalten.
 
 Die beiden Anmeldungen zeigen je eine URL; die Anmeldung erfolgt im Browser auf dem Notebook, danach den Code in das Terminal kopieren. Die erste Anmeldung gilt für `gcloud`, die zweite (Application Default Credentials) für Programme wie OpenTofu und die Python-Bibliotheken.
 
@@ -34,7 +37,7 @@ Die beiden Anmeldungen zeigen je eine URL; die Anmeldung erfolgt im Browser auf 
 ./create-budget.sh      # Monatsbudget BUDGET_AMOUNT aus config.env, Standard 10
 ```
 
-Google schickt eine E-Mail an die Abrechnungsadministratoren (also an das eigene Konto), wenn die tatsächlichen Kosten 50 % und 80 % des Budgets überschreiten oder die Prognose 100 % erreicht. Der Betrag gilt in der Währung des Abrechnungskontos. Das Budget rechnet ohne Gutschriften: Während der Testphase bezahlt das Guthaben alles, ein Budget nach Abzug der Gutschriften bliebe immer bei 0 und würde nie warnen. Andere Empfänger lassen sich über Benachrichtigungskanäle von Cloud Monitoring ergänzen.
+Google schickt eine E-Mail an die Abrechnungsadministratoren (also an das eigene Konto), wenn die tatsächlichen Kosten 50 % und 80 % des Budgets überschreiten oder die Prognose 100 % erreicht. Der Betrag gilt in der Währung des Abrechnungskontos. Das Budget überwacht das ganze Abrechnungskonto, also auch Kosten in anderen Projekten wie dem automatisch angelegten „My First Project“. Es rechnet ohne Gutschriften: Während der Testphase bezahlt das Guthaben alles, ein Budget nach Abzug der Gutschriften bliebe immer bei 0 und würde nie warnen. Andere Empfänger lassen sich über Benachrichtigungskanäle von Cloud Monitoring ergänzen.
 
 Kontrolle in der Konsole: *Billing* → *Budgets & alerts*. Ein zweiter Aufruf ändert nichts; zum Ändern erst `./delete-budget.sh`, dann wieder `./create-budget.sh`. Endgültig löschen erst am Kursende.
 
