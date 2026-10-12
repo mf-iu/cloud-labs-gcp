@@ -13,6 +13,9 @@ gcloud compute instances list --format 'table(name, zone.basename(), machineType
 section "Cloud NAT routers and reserved IP addresses"
 gcloud compute routers list --format 'table(name, region.basename(), network.basename())'
 gcloud compute addresses list --format 'table(name, address, status)'
+section "Disks and snapshots (cost storage even without a VM)"
+gcloud compute disks list --format 'table(name, zone.basename(), sizeGb, status, users.map().basename().list())'
+gcloud compute snapshots list --format 'table(name, diskSizeGb, sourceDisk.basename(), status)'
 section "Cloud SQL instances"
 gcloud sql instances list --format 'table(name, region, settings.tier, state)' 2>/dev/null || echo "Cloud SQL API not enabled"
 section "Cloud Run services and functions"
