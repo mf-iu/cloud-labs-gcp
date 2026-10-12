@@ -9,7 +9,8 @@ LAB=t02
 ref="${1:-t01}"
 zone="${VM_ZONE:-$GCP_FREE_ZONE}"
 check_login
-[[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create one: ssh-keygen -t ed25519"
+check_repo_ref "$PLACEFINDER_REPO" "$ref"
+[[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
 enable_apis compute.googleapis.com
 
 vm=$(name "$LAB-vm")

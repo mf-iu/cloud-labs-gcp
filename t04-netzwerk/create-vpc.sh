@@ -60,7 +60,7 @@ if $with_nat; then
 fi
 
 if $with_vm; then
-  [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found."
+  [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
   firewall t04-allow-ssh tcp:22 "--source-ranges=$(my_ip)/32" ssh
   gcloud compute instances create "$(name "$LAB-vm")" --zone "$GCP_ZONE" \
     --machine-type e2-micro --subnet "$(name public)" \
