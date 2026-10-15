@@ -19,7 +19,7 @@
 
   // SSH keys and the Google Cloud login stay in WSL and survive a rebuild of the
   // container. gcloud itself is installed by the Dockerfile.
-  "initializeCommand": "mkdir -p \"$HOME/.ssh\" \"$HOME/.config/gcloud\"",
+  "initializeCommand": "mkdir --parents \"$HOME/.ssh\" \"$HOME/.config/gcloud\"",
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind",
     "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind"

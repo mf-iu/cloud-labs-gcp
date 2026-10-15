@@ -33,7 +33,7 @@ jobs:
         run: |
           gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
           image="${{ vars.IMAGE_REPOSITORY }}/placefinder:${GITHUB_SHA::12}"
-          docker build -t "$image" .
+          docker build --tag "$image" .
           docker push "$image"
           echo "IMAGE=$image" >> "$GITHUB_ENV"
 

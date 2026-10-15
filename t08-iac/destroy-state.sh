@@ -11,5 +11,5 @@ gcloud storage buckets describe "gs://$bucket" >/dev/null 2>&1 || { log "No stat
 gcloud storage ls --recursive "gs://$bucket"
 confirm "Delete state bucket gs://$bucket with all state versions?" || exit 0
 gcloud storage rm --recursive --all-versions "gs://$bucket"
-rm -f "$STATE_DIR/backend.hcl"
+rm --force "$STATE_DIR/backend.hcl"
 log "State bucket deleted."

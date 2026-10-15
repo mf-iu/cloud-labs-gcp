@@ -14,7 +14,7 @@ url=$(gcloud storage sign-url "gs://$BUCKET/$object" --duration 1h \
 printf '\nSigned URL (1 hour):\n%s\n\n' "$url"
 
 log "Without signature the object is private (expect 403):"
-curl -s -o /dev/null -w '%{http_code}\n' "https://storage.googleapis.com/$BUCKET/$object"
+curl --silent --output /dev/null --write-out '%{http_code}\n' "https://storage.googleapis.com/$BUCKET/$object"
 
 log "Range request for the first 100 bytes (expect 206 Partial Content):"
-curl -s -D - -o /dev/null -r 0-99 "$url" | grep -iE '^HTTP|^content-range|^content-length'
+curl --silent --dump-header - --output /dev/null --range 0-99 "$url" | grep --ignore-case --extended-regexp '^HTTP|^content-range|^content-length'

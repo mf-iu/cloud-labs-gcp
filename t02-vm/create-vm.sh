@@ -22,7 +22,7 @@ gcloud compute firewall-rules create "$(name "$LAB-allow")" --network default \
 save_state "$LAB" FIREWALL_RULE "$(name "$LAB-allow")"
 
 user_data=$(mktemp)
-trap 'rm -f "$user_data"' EXIT
+trap 'rm --force "$user_data"' EXIT
 render "$(dirname "$0")/cloud-init.yaml" "REPO=$PLACEFINDER_REPO" "REF=$ref" >"$user_data"
 
 log "Creating e2-micro with Ubuntu 24.04 in $zone ..."
@@ -48,4 +48,4 @@ VM $vm is running.
   API:          http://$public_ip:8000/places?q=Erfurt
   Delete:       ./destroy-vm.sh
 INFO
-wait_for_http "http://$public_ip:8000/health" 900 || warn "Check the log on the VM: journalctl -u placefinder"
+wait_for_http "http://$public_ip:8000/health" 900 || warn "Check the log on the VM: journalctl --unit placefinder"

@@ -7,7 +7,7 @@
 ## Voraussetzungen
 
 - Docker im Dev Container
-- Image `$PLACEFINDER_IMAGE:t03` (öffentlich auf ghcr.io oder lokal gebaut: `docker build -t ghcr.io/<user>/placefinder:t03 .`)
+- Image `$PLACEFINDER_IMAGE:t03` (öffentlich auf ghcr.io oder lokal gebaut: `docker build --tag ghcr.io/<user>/placefinder:t03 .`)
 
 ## Schritte
 
@@ -21,7 +21,7 @@
 ## Prüfen
 
 ```bash
-url=$(grep SERVICE_URL ../.state/t03.env | cut -d= -f2)
+url=$(grep SERVICE_URL ../.state/t03.env | cut --delimiter = --fields 2)
 curl "$url/health"
 curl "$url/places?q=Berlin"
 gcloud run services describe pf-<owner>-placefinder --region europe-west3

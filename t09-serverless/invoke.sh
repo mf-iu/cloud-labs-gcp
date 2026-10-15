@@ -6,5 +6,5 @@ source "$(dirname "$0")/../lib/provider.sh"
 
 check_login
 url=$("$REPO_ROOT/tools/tofu.sh" "$REPO_ROOT/t09-serverless/infra" output -raw function_url)
-curl -fsS -H "Authorization: Bearer $(gcloud auth print-identity-token)" "$url?date=${1:-}"
+curl --fail --silent --show-error --header "Authorization: Bearer $(gcloud auth print-identity-token)" "$url?date=${1:-}"
 echo

@@ -24,7 +24,7 @@ gcloud run services add-iam-policy-binding "$(name placefinder)" --region "$GCP_
   --member "serviceAccount:$sa" --role roles/run.invoker >/dev/null
 
 spec=$(mktemp --suffix .yaml)
-trap 'rm -f "$spec"' EXIT
+trap 'rm --force "$spec"' EXIT
 render "$(dirname "$0")/openapi2.yaml" "BACKEND=$SERVICE_URL" >"$spec"
 
 log "Creating API $api and configuration $config ..."

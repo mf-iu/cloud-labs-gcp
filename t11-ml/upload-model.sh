@@ -14,5 +14,5 @@ log "Uploaded to $uri"
 
 # A changed environment variable creates a new revision with fresh instances
 gcloud run services update "$(tofu_out service_name)" --region "$GCP_REGION" \
-  --update-env-vars "MODEL_UPLOADED=$(date -u +%Y%m%dT%H%M%SZ)" --quiet
+  --update-env-vars "MODEL_UPLOADED=$(date --utc +%Y%m%dT%H%M%SZ)" --quiet
 log "New revision deployed."

@@ -35,15 +35,15 @@ Bei Google Cloud gehört jede Ressource zu einem **Projekt**. Rechte vergibt Clo
 Im Terminal des Dev Containers (siehe [README](../README.md#arbeitsumgebung-dev-container)):
 
 ```bash
-cd /workspaces/cloud-labs-gcp/t01-grundlagen   # Ordner dieser Übung
-cp -i ../config.example.env ../config.env      # OWNER, BUDGET_AMOUNT usw. eintragen
+cd /workspaces/cloud-labs-gcp/t01-grundlagen          # Ordner dieser Übung
+cp --interactive ../config.example.env ../config.env  # OWNER, BUDGET_AMOUNT usw. eintragen
 gcloud auth login --no-launch-browser
 gcloud auth application-default login --no-launch-browser
 ./create-project.sh
 ./check-cli.sh
 ```
 
-`cp -i` fragt nach, falls `config.env` schon existiert (z. B. aus der Einrichtung im [README](../README.md#einrichtung)); dann mit `n` antworten und die vorhandene Datei behalten.
+`cp --interactive` fragt nach, falls `config.env` schon existiert (z. B. aus der Einrichtung im [README](../README.md#einrichtung)); dann mit `n` antworten und die vorhandene Datei behalten.
 
 **`config.env` ausfüllen:** Die Datei enthält die persönlichen Einstellungen, die alle Skripte des Repositorys beim Start einlesen. Öffnen mit `code ../config.env`. Sie ist ein Shell-Skript: `NAME=wert` ohne Leerzeichen um das `=`, Werte mit Leerzeichen oder `$` in Anführungszeichen, Kommentare nach `#`. Die Datei steht in `.gitignore` und gelangt nie ins Repository. Änderungen gelten ab dem nächsten Skriptaufruf.
 

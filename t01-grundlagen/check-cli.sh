@@ -4,7 +4,7 @@
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
-log "$(gcloud version 2>/dev/null | sed -n 1p)"
+log "$(gcloud version 2>/dev/null | sed --quiet 1p)"
 check_login
 gcloud config list --format='table(core.account, core.project)'
 log "Project: $GCP_PROJECT, region: $GCP_REGION, free VM zone: $GCP_FREE_ZONE"

@@ -38,7 +38,7 @@ ssh ubuntu@<ip-der-test-vm>          # mit --with-vm
 ./diagnose.sh www.openstreetmap.org
 ```
 
-`diagnose.sh` zeigt nacheinander DNS-Antworten, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl -v`) und die Zertifikatskette (`openssl s_client`).
+`diagnose.sh` zeigt nacheinander DNS-Antworten, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl --verbose`) und die Zertifikatskette (`openssl s_client`).
 
 ## Aufräumen
 
