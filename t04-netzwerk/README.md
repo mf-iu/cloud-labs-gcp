@@ -14,7 +14,7 @@ Die Selbstlernphase von Termin 4 hat drei Teile: Der Netzentwurf aus der Übung 
 
 **Ziel:** drei regionale Subnetze für öffentliche Dienste, Anwendung und Datenbank und Firewall-Regeln, die über Netzwerk-Tags festlegen, wer wen erreichen darf.
 
-**Kosten:** VPC, Subnetze und Firewall-Regeln sind kostenlos. Die beiden optionalen Test-VMs (`e2-micro` in `GCP_ZONE`) kosten in Frankfurt zusammen wenige Cent pro Stunde. Das optionale **Cloud NAT kostet ca. 0,045 USD pro Stunde plus Datenmenge** – am selben Tag wieder löschen.
+**Kosten:** VPC, Subnetze und Firewall-Regeln sind kostenlos. Die beiden optionalen Test-VMs (`e2-micro` in `GCP_ZONE`) kosten in Frankfurt zusammen wenige Cent pro Stunde. Das optionale **Cloud NAT kostet je VM 0,0014 USD pro Stunde (höchstens 0,044 USD), dazu 0,005 USD pro Stunde für seine IP-Adresse und 0,045 USD je GB** – für die eine private VM nur wenige Cent pro Tag, trotzdem am selben Tag wieder löschen.
 
 ### Aufbau
 

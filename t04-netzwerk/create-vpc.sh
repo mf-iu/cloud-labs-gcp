@@ -7,7 +7,7 @@
 #   --with-vm   two test VMs: a bastion in the public subnet (SSH from your IP
 #               only) and a VM without external address in the application
 #               subnet (SSH only from the bastion); check with ./check-vpc.sh
-#   --with-nat  Cloud NAT for the application subnet (about 1 USD per day!)
+#   --with-nat  Cloud NAT for the application subnet (charged per VM and hour)
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
@@ -54,7 +54,7 @@ firewall t04-allow-postgres tcp:5432 --source-tags=app db
 # Without rules, a VPC denies all incoming and allows all outgoing traffic
 
 if $with_nat; then
-  warn "Cloud NAT costs about 0.045 USD per hour plus data. Delete it today!"
+  warn "Cloud NAT costs 0.0014 USD per VM and hour, 0.005 USD per NAT address and hour, plus data. Delete it today!"
   gcloud compute routers create "$(name router)" --network "$vpc" --region "$GCP_REGION" --quiet
   gcloud compute routers nats create "$(name nat)" --router "$(name router)" \
     --region "$GCP_REGION" --auto-allocate-nat-external-ips \
