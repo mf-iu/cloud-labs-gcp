@@ -8,10 +8,11 @@ LAB=t04
 check_login
 load_state "$LAB"
 [[ -n "${VPC:-}" ]] || { log "Nothing to delete."; exit 0; }
-confirm "Delete VPC $VPC with subnets, firewall rules, Cloud NAT and test VM?" || exit 0
+confirm "Delete VPC $VPC with subnets, firewall rules, Cloud NAT and test VMs?" || exit 0
 
-if [[ -n "${INSTANCE:-}" ]]; then
-  gcloud compute instances delete "$INSTANCE" --zone "$GCP_ZONE" --quiet
+if [[ -n "${INSTANCES:-}" ]]; then
+  # shellcheck disable=SC2086  # several names on purpose
+  gcloud compute instances delete $INSTANCES --zone "${ZONE:-$GCP_ZONE}" --quiet
 fi
 if [[ -n "${NAT:-}" ]]; then
   gcloud compute routers delete "$(name router)" --region "$GCP_REGION" --quiet
@@ -24,4 +25,5 @@ for subnet in "$(name public)" "$(name app)" "$(name db)"; do
 done
 gcloud compute networks delete "$VPC" --quiet
 clear_state "$LAB"
+rm --force "$STATE_DIR/$LAB.known_hosts"   # host keys of the test VMs (check-vpc.sh)
 log "Network deleted."

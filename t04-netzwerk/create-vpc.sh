@@ -4,7 +4,9 @@
 # and firewall rules that use network tags instead of subnets.
 #
 # Usage: ./create-vpc.sh [--with-vm] [--with-nat]
-#   --with-vm   test VM in the public subnet (SSH from your IP only)
+#   --with-vm   two test VMs: a bastion in the public subnet (SSH from your IP
+#               only) and a VM without external address in the application
+#               subnet (SSH only from the bastion); check with ./check-vpc.sh
 #   --with-nat  Cloud NAT for the application subnet (about 1 USD per day!)
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
@@ -25,6 +27,7 @@ vpc=$(name vpc)
 if gcloud compute networks describe "$vpc" >/dev/null 2>&1; then
   die "VPC $vpc exists already. Run ./destroy-vpc.sh first."
 fi
+clear_state "$LAB"   # values of an earlier run
 save_state "$LAB" VPC "$vpc"
 
 log "Creating VPC $vpc (custom subnet mode, the VPC itself is global) ..."
@@ -62,15 +65,31 @@ fi
 if $with_vm; then
   [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
   firewall t04-allow-ssh tcp:22 "--source-ranges=$(my_ip)/32" ssh
-  gcloud compute instances create "$(name "$LAB-vm")" --zone "$GCP_ZONE" \
-    --machine-type e2-micro --subnet "$(name public)" \
-    --image-family ubuntu-2404-lts-amd64 --image-project ubuntu-os-cloud \
-    --metadata "ssh-keys=ubuntu:$(cat "$SSH_PUBLIC_KEY")" \
-    --tags ssh --labels "$(labels "$LAB")" --quiet
-  save_state "$LAB" INSTANCE "$(name "$LAB-vm")"
-  public_ip=$(gcloud compute instances describe "$(name "$LAB-vm")" --zone "$GCP_ZONE" \
-    --format 'value(networkInterfaces[0].accessConfigs[0].natIP)')
-  log "Test VM: ssh ubuntu@$public_ip"
+  firewall t04-allow-ssh-from-bastion tcp:22 --source-tags=ssh app
+
+  vm() {   # vm <name> <subnet> <network tag> <options for the external address...>
+    gcloud compute instances create "$(name "$LAB-$1")" --zone "$GCP_ZONE" \
+      --machine-type e2-micro --subnet "$(name "$2")" "${@:4}" \
+      --image-family ubuntu-2404-lts-amd64 --image-project ubuntu-os-cloud \
+      --metadata "ssh-keys=ubuntu:$(cat "$SSH_PUBLIC_KEY")" \
+      --tags "$3" --labels "$(labels "$LAB")" --quiet
+  }
+  log "Creating the bastion in subnet public and a private VM in subnet app ..."
+  vm bastion public ssh
+  vm private app app --no-address
+  save_state "$LAB" INSTANCES "$(name "$LAB-bastion") $(name "$LAB-private")"
+  save_state "$LAB" ZONE "$GCP_ZONE"
+  ip_of() {   # ip_of <name> <field>
+    gcloud compute instances describe "$(name "$LAB-$1")" --zone "$GCP_ZONE" --format "value($2)"
+  }
+  bastion_ip=$(ip_of bastion 'networkInterfaces[0].accessConfigs[0].natIP')
+  private_ip=$(ip_of private 'networkInterfaces[0].networkIP')
+  save_state "$LAB" SSH_USER ubuntu
+  save_state "$LAB" BASTION_IP "$bastion_ip"
+  save_state "$LAB" PRIVATE_IP "$private_ip"
+  log "Bastion:    ssh ubuntu@$bastion_ip"
+  log "Private VM: ssh -J ubuntu@$bastion_ip ubuntu@$private_ip"
+  log "Check both: ./check-vpc.sh (the VMs need about a minute to start SSH)"
 fi
 
 log "Network created. Overview:"
