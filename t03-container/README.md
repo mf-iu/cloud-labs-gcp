@@ -9,7 +9,7 @@ Zwei Teile: In der Übung läuft PlaceFinder in einem lokalen Kubernetes-Cluster
 | Skript | Aufgabe |
 |---|---|
 | `cluster-up.sh` | Cluster `pf` anlegen (1 Server, 2 Agents, k3s 1.36) oder wieder starten |
-| `build-image.sh` | Image `placefinder:<version>` aus `../placefinder` bauen und in die Nodes laden; mit `--push` zusätzlich nach ghcr.io (Teil 2) |
+| `build-image.sh` | Image `placefinder:<version>` aus `../placefinder` bauen und in die Nodes laden; mit `--push` zusätzlich als `:<version>` und `:t03` nach ghcr.io (Teil 2; `--tag t05` für den Stand von Termin 5) |
 | `cluster-down.sh` | Cluster löschen; die Images bleiben in Docker |
 
 ```bash
@@ -57,7 +57,7 @@ Aufräumen nach der Selbstlernphase: `./cluster-down.sh`.
 ```bash
 url=$(grep SERVICE_URL ../.state/t03.env | cut --delimiter = --fields 2)
 curl "$url/health"
-curl "$url/places?q=Berlin"
+curl "$url/places?q=Erfurt"
 gcloud run services describe pf-<owner>-placefinder --region europe-west3
 gcloud run services logs read pf-<owner>-placefinder --region europe-west3 --limit 20
 ```

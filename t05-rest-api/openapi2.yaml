@@ -1,5 +1,9 @@
 # API Gateway configuration (OpenAPI 2.0, as required by Google API Gateway).
-# create-api-gateway.sh replaces __BACKEND__ with the Cloud Run URL.
+# create-api-gateway.sh replaces __BACKEND__ with the Cloud Run URL and
+# __QUOTA__ with the requests per minute.
+# Only the paths below reach the service; the gateway answers all others
+# with 404. Every request needs an API key in the header x-api-key; the
+# requests with keys of one project count against QUOTA per minute.
 swagger: "2.0"
 info:
   title: placefinder
@@ -7,23 +11,61 @@ info:
 schemes:
   - https
 produces:
+  - application/geo+json
   - application/json
 x-google-backend:
   address: __BACKEND__
   path_translation: APPEND_PATH_TO_ADDRESS
+securityDefinitions:
+  api_key:
+    type: apiKey
+    name: x-api-key
+    in: header
+security:
+  - api_key: []
+x-google-management:
+  metrics:
+    - name: requests
+      displayName: Requests
+      valueType: INT64
+      metricKind: DELTA
+  quota:
+    limits:
+      - name: requests-per-minute
+        metric: requests
+        unit: "1/min/{project}"
+        values:
+          STANDARD: __QUOTA__
 paths:
+  /:
+    get:
+      operationId: about
+      x-google-quota:
+        metricCosts:
+          requests: 1
+      responses:
+        "200":
+          description: Name, version and attribution
   /health:
     get:
       operationId: health
+      x-google-quota:
+        metricCosts:
+          requests: 1
       responses:
         "200":
           description: Service is healthy
   /v1/places:
     get:
       operationId: searchPlaces
+      x-google-quota:
+        metricCosts:
+          requests: 1
       responses:
         "200":
           description: GeoJSON FeatureCollection
+        "422":
+          description: Invalid parameters (problem details)
   /v1/places/{id}:
     get:
       operationId: getPlace
@@ -32,8 +74,38 @@ paths:
           in: path
           required: true
           type: integer
+      x-google-quota:
+        metricCosts:
+          requests: 1
       responses:
         "200":
           description: GeoJSON Feature
+        "304":
+          description: Not modified
         "404":
-          description: Unknown place
+          description: Unknown place (problem details)
+  /places:
+    get:
+      operationId: searchPlacesV0
+      deprecated: true
+      x-google-quota:
+        metricCosts:
+          requests: 1
+      responses:
+        "200":
+          description: List of places (version 0)
+  /places/{id}:
+    get:
+      operationId: getPlaceV0
+      deprecated: true
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+      x-google-quota:
+        metricCosts:
+          requests: 1
+      responses:
+        "200":
+          description: One place (version 0)
