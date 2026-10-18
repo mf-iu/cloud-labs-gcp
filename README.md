@@ -73,7 +73,7 @@ t01-grundlagen/check-cli.sh
 | 3 | [t03-container](t03-container/README.md) | Lokaler Kubernetes-Cluster mit k3d; Image in der Artifact Registry, Betrieb mit Cloud Run (Serverless Container) | k3d, kubectl, Docker, gcloud |
 | 4 | [t04-netzwerk](t04-netzwerk/README.md) | VPC mit Subnetzen, Firewall-Regeln mit Netzwerk-Tags, Cloud NAT, Test-VMs mit Bastion-Host, Diagnose; lokal Gateway API und TLS mit cert-manager | gcloud, k3d, kubectl, Helm |
 | 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version per Digest als Revision ausrollen, Smoke-Test der REST-API, API Gateway mit API-Key und Kontingent | gcloud, curl |
-| 6 | [t06-datenbank](t06-datenbank/README.md) | Cloud SQL for PostgreSQL mit PostGIS, Import von cities15000, räumliche Abfragen | gcloud, psql |
+| 6 | [t06-datenbank](t06-datenbank/README.md) | PostGIS lokal und als Cloud SQL for PostgreSQL, Import von cities15000, räumliche Abfragen, PlaceFinder mit Datenbank, Backups | gcloud, psql, uv |
 | 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Cloud Storage, Signed URLs, Range Requests, CORS, Lebenszyklusregeln | gcloud |
 | 8 | [t08-iac](t08-iac/README.md) | Infrastruktur der Zwischenpräsentation als OpenTofu-Code, Remote State, GitHub Actions ohne Schlüssel (Workload Identity Federation) | OpenTofu |
 | 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Cloud Run function mit Cloud Scheduler | OpenTofu, Python |

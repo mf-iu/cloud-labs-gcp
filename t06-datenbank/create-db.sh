@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Create a Cloud SQL for PostgreSQL instance (Enterprise edition, shared
-# core db-f1-micro) that only accepts connections from your IP address.
-# Takes about 10 minutes.
+# Create a Cloud SQL for PostgreSQL 18 instance (Enterprise edition, shared
+# core db-f1-micro) that only accepts connections from your IP address, with
+# daily backups and point-in-time recovery. Takes about 10 minutes.
 # Usage: ./create-db.sh
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
@@ -17,10 +17,11 @@ instance=$(name "$LAB-db-$(date +%m%d%H%M)")
 password=$(random_password)
 ip=$(my_ip)
 
-log "Creating Cloud SQL instance $instance (PostgreSQL 17, db-f1-micro, 10 GB) ..."
+log "Creating Cloud SQL instance $instance (PostgreSQL 18, db-f1-micro, 10 GB) ..."
 gcloud sql instances create "$instance" --region "$GCP_REGION" \
-  --database-version POSTGRES_17 --edition ENTERPRISE --tier db-f1-micro \
+  --database-version POSTGRES_18 --edition enterprise --tier db-f1-micro \
   --storage-size 10 --storage-type SSD \
+  --backup --enable-point-in-time-recovery \
   --root-password "$password" --authorized-networks "$ip/32" \
   --labels "$(labels "$LAB")" --quiet
 save_state "$LAB" INSTANCE "$instance"
@@ -35,6 +36,8 @@ cat <<INFO
 Database ready: $host
   Load data:   ./load-cities.sh
   Queries:     ./query.sh       (interactive: ./query.sh --interactive)
+  PlaceFinder: ./test-api.sh    (smoke test of t05 with this database)
+  Backups:     ./backups.sh
   Delete:      ./destroy-db.sh  (do not keep it running!)
 The connection string is stored in .state/$LAB.env.
 INFO
