@@ -74,7 +74,7 @@ t01-grundlagen/check-cli.sh
 | 4 | [t04-netzwerk](t04-netzwerk/README.md) | VPC mit Subnetzen, Firewall-Regeln mit Netzwerk-Tags, Cloud NAT, Test-VMs mit Bastion-Host, Diagnose; lokal Gateway API und TLS mit cert-manager | gcloud, k3d, kubectl, Helm |
 | 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version per Digest als Revision ausrollen, Smoke-Test der REST-API, API Gateway mit API-Key und Kontingent | gcloud, curl |
 | 6 | [t06-datenbank](t06-datenbank/README.md) | PostGIS lokal und als Cloud SQL for PostgreSQL, Import von cities15000, räumliche Abfragen, PlaceFinder mit Datenbank, Backups | gcloud, psql, uv |
-| 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Cloud Storage, Signed URLs, Range Requests, CORS, Lebenszyklusregeln | gcloud |
+| 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Valkey als Cache und Geo-Index, SeaweedFS lokal und Cloud Storage mit Signed URLs, Range Requests und CORS, Kartenkacheln als PMTiles, Anbieterwechsel | gcloud, pmtiles, uv |
 | 8 | [t08-iac](t08-iac/README.md) | Infrastruktur der Zwischenpräsentation als OpenTofu-Code, Remote State, GitHub Actions ohne Schlüssel (Workload Identity Federation) | OpenTofu |
 | 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Cloud Run function mit Cloud Scheduler | OpenTofu, Python |
 | 10 | [t10-datenanalyse](t10-datenanalyse/README.md) | GeoParquet im Data Lake, Abfragen mit DuckDB und BigQuery, Overture Maps | OpenTofu, DuckDB, bq |

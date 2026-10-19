@@ -1,8 +1,8 @@
 [
   {
-    "origin": ["*"],
+    "origin": ["http://localhost:5173"],
     "method": ["GET", "HEAD"],
-    "responseHeader": ["Content-Type", "Range", "If-None-Match", "ETag", "Content-Range"],
+    "responseHeader": ["Range", "ETag", "Content-Length", "Content-Range"],
     "maxAgeSeconds": 3600
   }
 ]
