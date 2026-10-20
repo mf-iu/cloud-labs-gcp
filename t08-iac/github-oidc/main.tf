@@ -52,12 +52,11 @@ resource "google_service_account_iam_member" "workload_identity" {
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repository}"
 }
 
-# Push images and deploy Cloud Run revisions in this project
+# Deploy Cloud Run revisions in this project. The images come from ghcr.io
+# through the remote repository of t08-iac/infra, so nobody pushes there.
 resource "google_project_iam_member" "deploy" {
-  for_each = toset(["roles/artifactregistry.writer", "roles/run.developer"])
-
   project = var.project
-  role    = each.value
+  role    = "roles/run.developer"
   member  = google_service_account.deploy.member
 }
 

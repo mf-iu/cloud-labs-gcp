@@ -1,43 +1,69 @@
-# Example workflow for your PlaceFinder fork: copy it to
-# .github/workflows/deploy.yml. It builds the image, pushes it to Artifact
-# Registry and deploys a new Cloud Run revision, without a JSON key.
+# Deploy workflow for your PlaceFinder fork (session 8): copy it to
+# .github/workflows/deploy.yml. It runs after a successful run of the CI
+# pipeline (ci.yml) on master, rolls out the image of that run by digest as
+# a new revision of the Cloud Run service of t08-iac/infra and runs the
+# smoke test of session 5 against it - without a JSON key: the workflow
+# exchanges its OIDC token for a short-lived token of the service account
+# from t08-iac/github-oidc (Workload Identity Federation).
 #
-# Repository variables (from "tofu output" of t08-iac/github-oidc and t08-iac/infra):
+# Repository variables (Settings > Secrets and variables > Actions >
+# Variables), from "tofu output" of t08-iac/github-oidc and t08-iac/infra:
 #   GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, GCP_REGION,
-#   IMAGE_REPOSITORY, SERVICE_NAME
+#   SERVICE_NAME, IMAGE_REPOSITORY, SERVICE_URL
 name: deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [master]
 
 permissions:
   contents: read
   id-token: write   # needed to request the OIDC token
 
+# one rollout at a time; a newer one waits instead of cancelling a running one
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # only after a green pipeline for a push (pull requests push no image)
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - name: Image of the CI run, by digest
+        # a tag can move, the digest names exactly the tested image; Cloud
+        # Run pulls it from ghcr.io through the remote repository
+        run: |
+          ref="ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.event.workflow_run.head_sha }}"
+          digest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq --raw-output .digest)
+          echo "IMAGE=${{ vars.IMAGE_REPOSITORY }}@$digest" >> "$GITHUB_ENV"
 
       - name: Authenticate via Workload Identity Federation
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
-      - uses: google-github-actions/setup-gcloud@v3
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
-      - name: Build and push the image
-        run: |
-          gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
-          image="${{ vars.IMAGE_REPOSITORY }}/placefinder:${GITHUB_SHA::12}"
-          docker build --tag "$image" .
-          docker push "$image"
-          echo "IMAGE=$image" >> "$GITHUB_ENV"
-
-      - name: Deploy a new Cloud Run revision
+      - name: Roll out the new image
+        # gcloud waits until the new revision is ready and gets the traffic
         run: |
           gcloud run deploy "${{ vars.SERVICE_NAME }}" --image "$IMAGE" \
             --region "${{ vars.GCP_REGION }}" --quiet
+
+      - name: Check out the lab repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mf-iu/cloud-labs-gcp
+          persist-credentials: false
+
+      - name: Smoke test (session 5)
+        # the lab scripts need a config.env; the example is enough here
+        run: |
+          cp config.example.env config.env
+          t05-rest-api/smoke-test.sh "${{ vars.SERVICE_URL }}"

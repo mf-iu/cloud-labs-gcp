@@ -37,7 +37,7 @@ gcloud storage ls --recursive "gs://$(tools/tofu.sh t09-serverless/infra output 
 
 Die Function ist privat: Aufrufen dürfen nur Konten mit der Rolle *Cloud Run Invoker*. `invoke.sh` schickt das eigene Identitätstoken mit (als Projektinhaber hat man die Rolle), Cloud Scheduler meldet sich mit einem OIDC-Token seines Service Accounts an. Der Zeitplan läuft täglich um 6:30 Uhr deutscher Zeit (`schedule`, Zeitzone `Europe/Berlin`).
 
-Mit Datenbank (z. B. aus Termin 6 oder `t08-iac` mit `enable_database=true`):
+Mit Datenbank (z. B. aus Termin 6; die Datenbank aus `t08-iac` liegt im privaten Netz und ist von außen nicht erreichbar):
 
 ```bash
 tools/tofu.sh t09-serverless/infra apply -var "database_url=postgresql://…?sslmode=require"
