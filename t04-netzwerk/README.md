@@ -1,20 +1,20 @@
 # T04 – Netze: VPC in Google Cloud, Diagnose, Gateway API lokal
 
-Die Selbstlernphase von Termin 4 hat drei Teile: Der Netzentwurf aus der Übung wird als VPC in Google Cloud angelegt und mit zwei Test-VMs geprüft (Aufgabe 1), `diagnose.sh` zeigt den Weg einer HTTPS-Anfrage (Aufgabe 2), und die Demo mit Gateway API und cert-manager läuft im lokalen k3d-Cluster (Aufgaben 3 und 4).
+Die Übung von Termin 4 läuft im Termin: Nach dem Entwurf auf Papier wird das Netz als VPC in Google Cloud angelegt, mit dem Entwurf verglichen und wieder gelöscht (ca. 45 Minuten). Alles Weitere ist **Zusatz** – freiwillig und ohne Folgen für spätere Termine: Test-VMs und Cloud NAT, Diagnose einer HTTPS-Anfrage und die Demo mit Gateway API und cert-manager im lokalen k3d-Cluster.
 
 | Skript | Aufgabe |
 |---|---|
 | `create-vpc.sh` | VPC mit Subnetzen und Firewall-Regeln anlegen; optional Test-VMs und Cloud NAT |
-| `check-vpc.sh` | Test-VMs prüfen: Was ist von wo erreichbar? |
+| `check-vpc.sh` | Netz mit dem Entwurf vergleichen; mit Test-VMs auch: Was ist von wo erreichbar? |
 | `destroy-vpc.sh` | alles wieder löschen |
 | `diagnose.sh` | DNS, TCP, TLS und Zertifikat eines Hosts anzeigen |
 | `gateway-up.sh`, `gateway-down.sh` | lokaler Cluster mit Gateway API, cert-manager und PlaceFinder über HTTPS (Dateien in `k8s/`) |
 
-## Teil 1: VPC mit Subnetzen und Firewall-Regeln
+## Im Termin: Netz anlegen, prüfen, löschen
 
 **Ziel:** drei regionale Subnetze für öffentliche Dienste, Anwendung und Datenbank und Firewall-Regeln, die über Netzwerk-Tags festlegen, wer wen erreichen darf.
 
-**Kosten:** VPC, Subnetze und Firewall-Regeln sind kostenlos. Die beiden optionalen Test-VMs (`e2-micro` in `GCP_ZONE`) kosten in Frankfurt zusammen wenige Cent pro Stunde. Das optionale **Cloud NAT kostet je VM 0,0014 USD pro Stunde (höchstens 0,044 USD), dazu 0,005 USD pro Stunde für seine IP-Adresse und 0,045 USD je GB** – für die eine private VM nur wenige Cent pro Tag, trotzdem am selben Tag wieder löschen.
+**Kosten:** VPC, Subnetze und Firewall-Regeln sind kostenlos; ohne die Optionen `--with-vm` und `--with-nat` entsteht nichts, was Geld kostet.
 
 ### Aufbau
 
@@ -34,17 +34,13 @@ Die Selbstlernphase von Termin 4 hat drei Teile: Der Netzentwurf aus der Übung 
 
 Besonderheiten von Google Cloud: Die VPC ist **global**, die Subnetze sind regional und reichen über alle Zonen. „Öffentlich“ ist nicht das Subnetz, sondern eine VM mit externer IP-Adresse. Ohne eigene Regeln verbietet eine VPC jeden eingehenden und erlaubt jeden ausgehenden Verkehr; ausgehend ins Internet kommt aber nur, wer eine externe IP-Adresse hat oder Cloud NAT nutzt.
 
-### Schritte
+### Anlegen
 
 ```bash
-./create-vpc.sh                      # nur das Netz
-./create-vpc.sh --with-vm            # zusätzlich zwei Test-VMs
-./create-vpc.sh --with-vm --with-nat # zusätzlich Cloud Router und Cloud NAT (kostet!)
+./create-vpc.sh
 ```
 
-Mit `--with-vm` entstehen zwei VMs: ein **Bastion-Host** im Subnetz `public` mit externer Adresse und eine **private VM** im Subnetz `app` ohne externe Adresse (`--no-address`). Die private VM ist nur über den Bastion-Host erreichbar (SSH-Sprung mit `-J`).
-
-Ein Bastion-Host ist das klassische Muster für den Zugang zu privaten Subnetzen. Google Cloud bietet dafür den Identity-Aware Proxy (IAP): `gcloud compute ssh --tunnel-through-iap` erreicht VMs ohne externe Adresse, nur eine Firewall-Regel für den Adressbereich von IAP (35.235.240.0/20) ist nötig.
+Das Skript läuft ein bis zwei Minuten und zeigt am Ende eine Übersicht der Subnetze.
 
 ### Prüfen
 
@@ -52,7 +48,58 @@ Ein Bastion-Host ist das klassische Muster für den Zugang zu privaten Subnetzen
 ./check-vpc.sh
 ```
 
-Das Skript meldet sich am Bastion-Host an, springt von dort auf die private VM und prüft vier Erwartungen aus dem Netzentwurf:
+Das Skript vergleicht das angelegte Netz mit dem Entwurf und markiert Abweichungen mit `UNEXPECTED`:
+
+| Prüfung | Erwartung |
+|---|---|
+| Adressbereich je Subnetz | `public` = `10.20.0.0/24`, `app` = `10.20.10.0/24`, `db` = `10.20.20.0/24` |
+| Internetzugang von `app` und `db` | keiner – VMs ohne externe Adresse und ohne Cloud NAT (mit `--with-nat`: `app` über Cloud NAT) |
+| Private Google Access für `db` | eingeschaltet |
+| Firewall-Regeln je Netzwerk-Tag | `lb`: tcp:443 von `0.0.0.0/0`, `app`: tcp:8000 von Tag `lb`, `db`: tcp:5432 von Tag `app` |
+
+Die Regeln für SSH (mit `--with-vm`) prüft das Skript nicht; sie gehören nicht zum Entwurf.
+
+Zum Ausprobieren: in der Konsole des Anbieters eine Regel ändern, etwa die Datenbank aus dem ganzen Internet erlauben, und `./check-vpc.sh` erneut aufrufen. Danach die Änderung zurücknehmen.
+
+Von Hand:
+
+```bash
+gcloud compute networks subnets list --network pf-<owner>-vpc
+gcloud compute firewall-rules list --filter 'network~pf-<owner>-vpc$'
+```
+
+### Aufräumen – gehört zur Übung
+
+```bash
+./destroy-vpc.sh
+../tools/find-leftovers.sh
+```
+
+Erst wenn beide Befehle durchgelaufen sind, ist die Übung fertig.
+
+### Fragen zum Weiterdenken
+
+- Welche Vorteile hat eine globale VPC für eine Anwendung in mehreren Regionen?
+- Warum sind Netzwerk-Tags (oder Service Accounts) als Ziel von Firewall-Regeln praktischer als Adressbereiche?
+- Wozu dient Private Google Access, und warum braucht die Datenbank-Schicht trotzdem kein NAT?
+
+## Zusatz 1: Test-VMs und Cloud NAT
+
+**Kosten:** Die beiden Test-VMs (`e2-micro` in `GCP_ZONE`) kosten in Frankfurt zusammen wenige Cent pro Stunde. **Cloud NAT kostet je VM 0,0014 USD pro Stunde (höchstens 0,044 USD), dazu 0,005 USD pro Stunde für seine IP-Adresse und 0,045 USD je GB** – für die eine private VM nur wenige Cent pro Tag. Am selben Tag wieder löschen.
+
+Die Optionen gelten nur beim Anlegen; ein bestehendes Netz erst mit `./destroy-vpc.sh` löschen.
+
+```bash
+./create-vpc.sh --with-vm            # zusätzlich zwei Test-VMs
+./create-vpc.sh --with-vm --with-nat # zusätzlich Cloud Router und Cloud NAT (kostet!)
+./check-vpc.sh
+```
+
+Mit `--with-vm` entstehen zwei VMs: ein **Bastion-Host** im Subnetz `public` mit externer Adresse und eine **private VM** im Subnetz `app` ohne externe Adresse (`--no-address`). Die private VM ist nur über den Bastion-Host erreichbar (SSH-Sprung mit `-J`).
+
+Ein Bastion-Host ist das klassische Muster für den Zugang zu privaten Subnetzen. Google Cloud bietet dafür den Identity-Aware Proxy (IAP): `gcloud compute ssh --tunnel-through-iap` erreicht VMs ohne externe Adresse, nur eine Firewall-Regel für den Adressbereich von IAP (35.235.240.0/20) ist nötig.
+
+Mit Test-VMs meldet sich `check-vpc.sh` zusätzlich am Bastion-Host an, springt von dort auf die private VM und prüft vier Erwartungen an die Erreichbarkeit:
 
 | Prüfung | ohne `--with-nat` | mit `--with-nat` |
 |---|---|---|
@@ -68,25 +115,13 @@ Von Hand:
 ```bash
 ssh ubuntu@<bastion-ip>
 ssh -J ubuntu@<bastion-ip> ubuntu@<private-ip>
-gcloud compute networks subnets list --network pf-<owner>-vpc
-gcloud compute firewall-rules list --filter 'network~pf-<owner>-vpc$'
 ```
 
 Die Adressen stehen in der Ausgabe von `create-vpc.sh` und in `../.state/t04.env`. Wechselt die eigene IP-Adresse (anderes WLAN), lässt die Regel `allow-ssh` keine Verbindung mehr zu – dann `./destroy-vpc.sh` und neu anlegen.
 
-### Aufräumen
+Danach aufräumen wie oben: `./destroy-vpc.sh`.
 
-```bash
-./destroy-vpc.sh
-```
-
-### Fragen zum Weiterdenken
-
-- Welche Vorteile hat eine globale VPC für eine Anwendung in mehreren Regionen?
-- Warum sind Netzwerk-Tags (oder Service Accounts) als Ziel von Firewall-Regeln praktischer als Adressbereiche?
-- Wozu dient Private Google Access, und warum braucht die Datenbank-Schicht trotzdem kein NAT?
-
-## Teil 2: Diagnose
+## Zusatz 2: Diagnose
 
 ```bash
 ./diagnose.sh                          # www.openstreetmap.org
@@ -95,7 +130,7 @@ Die Adressen stehen in der Ausgabe von `create-vpc.sh` und in `../.state/t04.env
 
 Das Skript zeigt nacheinander die DNS-Antwort mit TTL und Resolver, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl --verbose`), die Zeit bis zu jedem Schritt (`curl --write-out`) und die Zertifikatskette (`openssl s_client`). Blockiert das Netz DNS-Anfragen an andere Server als den eigenen Resolver (manche Firmen- und Hochschulnetze), bleibt der Abschnitt `dig +trace` leer.
 
-## Teil 3: Gateway API und TLS lokal
+## Zusatz 3: Gateway API und TLS lokal
 
 **Kosten:** keine – alles läuft im Dev Container. Der Cluster `net` hat einen Node und braucht mit allen Pods rund 1,5 GB Arbeitsspeicher; läuft der Cluster `pf` aus Termin 3 noch, ihn bei Bedarf mit `k3d cluster stop pf` anhalten.
 
@@ -124,7 +159,7 @@ kubectl describe certificate pf-tls       # ausgestellt von course-ca, Laufzeit,
 openssl x509 -in ../.state/course-ca.crt -noout -subject -enddate
 ```
 
-**NetworkPolicies (Aufgabe 4):**
+**NetworkPolicies:**
 
 ```bash
 kubectl apply --filename k8s/networkpolicies.yaml
