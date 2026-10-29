@@ -1,0 +1,6 @@
+{
+  "id": "provider-tools",
+  "version": "1.0.0",
+  "name": "Google Cloud CLI",
+  "description": "gcloud, bq and gsutil for the Google Cloud labs, from the package repository of Google"
+}

@@ -3,7 +3,6 @@
 # Overture Maps dataset. Each query may bill at most 20 GB, the free tier
 # covers 1 TiB of queries per month.
 # Usage: ./bigquery.sh ["SQL"]
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 require bq

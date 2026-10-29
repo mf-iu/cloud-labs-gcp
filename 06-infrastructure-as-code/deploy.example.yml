@@ -1,0 +1,67 @@
+# Deploy workflow for your PlaceFinder fork (session 8): copy it to
+# .github/workflows/deploy.yml. It runs after a successful run of the CI
+# pipeline (ci.yml) on master, rolls out the image of that run by digest as
+# a new revision of the Cloud Run service of 06-infrastructure-as-code/service
+# and runs the smoke test of cloud-labs-local against it - without a JSON
+# key: the workflow exchanges its OIDC token for a short-lived token of the
+# service account from 06-infrastructure-as-code/github-oidc (Workload
+# Identity Federation).
+#
+# Repository variables (Settings > Secrets and variables > Actions >
+# Variables), from "tofu output" of github-oidc and service:
+#   GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, GCP_REGION,
+#   SERVICE_NAME, IMAGE_REPOSITORY, SERVICE_URL
+name: deploy
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write   # needed to request the OIDC token
+
+# one rollout at a time; a newer one waits instead of cancelling a running one
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # only after a green pipeline for a push (pull requests push no image)
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Image of the CI run, by digest
+        # a tag can move, the digest names exactly the tested image; Cloud
+        # Run pulls it from ghcr.io through the remote repository
+        run: |
+          ref="ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.event.workflow_run.head_sha }}"
+          digest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq --raw-output .digest)
+          echo "IMAGE=${{ vars.IMAGE_REPOSITORY }}@$digest" >> "$GITHUB_ENV"
+
+      - name: Authenticate via Workload Identity Federation
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Roll out the new image
+        # gcloud waits until the new revision is ready and gets the traffic
+        run: |
+          gcloud run deploy "${{ vars.SERVICE_NAME }}" --image "$IMAGE" \
+            --region "${{ vars.GCP_REGION }}" --quiet
+
+      - name: Check out the local labs, which contain the smoke test
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mf-iu/cloud-labs-local
+          persist-credentials: false
+
+      - name: Smoke test (session 5)
+        run: tools/smoke-test.sh "${{ vars.SERVICE_URL }}"

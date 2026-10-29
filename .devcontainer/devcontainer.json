@@ -1,12 +1,17 @@
 // Dev container for the Google Cloud labs of the cloud computing course.
-// Open this folder from WSL in VS Code and choose "Reopen in Container".
-// The first start builds the image and takes several minutes.
+// It builds the Dockerfile of cloud-labs-local, which must be cloned next to
+// this repository (see cloud-labs-local/00-setup), and adds the CLI of
+// Google Cloud. Open this folder from WSL in VS Code and choose "Reopen in
+// Container". The first start builds the image and takes several minutes.
 {
   "name": "Cloud-Kurs: Google Cloud",
-  "build": { "dockerfile": "Dockerfile" },
+  "build": {
+    "dockerfile": "../../cloud-labs-local/.devcontainer/Dockerfile",
+    "context": "../../cloud-labs-local/.devcontainer"
+  },
 
-  // The parent folder is mounted, so that PlaceFinder and the other
-  // repositories next to this one are available in the container, too.
+  // The parent folder is mounted, so that cloud-labs-local, PlaceFinder and
+  // the other repositories next to this one are available in the container.
   "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
@@ -14,11 +19,12 @@
     // Own Docker Engine inside the container (Docker in Docker)
     "ghcr.io/devcontainers/features/docker-in-docker:4": { "moby": false },
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": { "minikube": "none" },
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    // Google Cloud CLI (gcloud, bq, gsutil), see provider-tools/
+    "./provider-tools": {}
   },
 
-  // SSH keys and the Google Cloud login stay in WSL and survive a rebuild of the
-  // container. gcloud itself is installed by the Dockerfile.
+  // SSH keys and the Google Cloud login stay in WSL and survive a rebuild of the container
   "initializeCommand": "mkdir --parents \"$HOME/.ssh\" \"$HOME/.config/gcloud\"",
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind",
@@ -27,15 +33,14 @@
 
   "remoteUser": "vscode",
   "containerEnv": {
-    "COURSE_PROVIDER": "gcp",
     // The uv cache and the projects are on different file systems
     "UV_LINK_MODE": "copy"
   },
   "forwardPorts": [8000],
   "portsAttributes": { "8000": { "label": "PlaceFinder" } },
 
-  // Shows the versions of all tools; run it again at any time
-  "postCreateCommand": "tools/check-tools.sh",
+  // Shows the versions of all tools; run both again at any time
+  "postCreateCommand": "../cloud-labs-local/tools/check-tools.sh; 01-account/check-cli.sh --tools-only",
 
   "customizations": {
     "vscode": {

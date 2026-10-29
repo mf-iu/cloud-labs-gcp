@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Run query_duckdb.py with the HMAC key of the reader service account.
 # Usage: ./query-duckdb.sh
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 require uv

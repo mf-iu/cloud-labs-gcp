@@ -2,7 +2,6 @@
 # List resources of the course project that still exist, especially those
 # that cost money by the hour. Deletes nothing.
 # Usage: tools/find-leftovers.sh
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 check_login
