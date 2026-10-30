@@ -5,6 +5,8 @@ resource "google_service_account" "placefinder" {
   display_name = "PlaceFinder on Cloud Run (lab t08)"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # The service may read and write objects in the data bucket
 resource "google_storage_bucket_iam_member" "placefinder" {
   bucket = google_storage_bucket.data.name

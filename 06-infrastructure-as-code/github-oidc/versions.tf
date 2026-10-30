@@ -12,6 +12,8 @@ terraform {
   backend "gcs" {}
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Credentials: gcloud auth application-default login
 provider "google" {
   project = var.project

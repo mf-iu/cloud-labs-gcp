@@ -1,9 +1,13 @@
 # Data lake for lab t10: GeoParquet in Cloud Storage, queried with DuckDB
 # (HMAC key) and with BigQuery (external table, schema on read)
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}-t10"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_project_service" "this" {
   for_each = toset(["storage.googleapis.com", "bigquery.googleapis.com"])
@@ -11,6 +15,8 @@ resource "google_project_service" "this" {
   service            = each.value
   disable_on_destroy = false
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_storage_bucket" "lake" {
   name                        = "${local.name}-${var.suffix}-lake"
@@ -21,6 +27,8 @@ resource "google_storage_bucket" "lake" {
   depends_on                  = [google_project_service.this]
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # DuckDB reads Cloud Storage through its S3-compatible XML API, which
 # needs an HMAC key. The key belongs to a service account that may only read.
 resource "google_service_account" "reader" {
@@ -28,15 +36,21 @@ resource "google_service_account" "reader" {
   display_name = "DuckDB reader (lab t10)"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_storage_bucket_iam_member" "reader" {
   bucket = google_storage_bucket.lake.name
   role   = "roles/storage.objectViewer"
   member = google_service_account.reader.member
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_storage_hmac_key" "reader" {
   service_account_email = google_service_account.reader.email
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # BigQuery: dataset in the same location and an external table on the files
 resource "google_bigquery_dataset" "lab" {
@@ -45,6 +59,8 @@ resource "google_bigquery_dataset" "lab" {
   delete_contents_on_destroy = true
   depends_on                 = [google_project_service.this]
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_bigquery_table" "places" {
   dataset_id          = google_bigquery_dataset.lab.dataset_id

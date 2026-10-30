@@ -2,10 +2,14 @@
 # the workflow exchanges its OIDC token for a short-lived token of the
 # service account below (no JSON key).
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name    = "${var.prefix}-${var.owner}"
   pool_id = coalesce(var.pool_id, "${local.name}-github")
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_project_service" "this" {
   for_each = toset([
@@ -16,11 +20,15 @@ resource "google_project_service" "this" {
   disable_on_destroy = false
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_iam_workload_identity_pool" "github" {
   workload_identity_pool_id = local.pool_id
   display_name              = "GitHub Actions"
   depends_on                = [google_project_service.this]
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_iam_workload_identity_pool_provider" "github" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
@@ -40,10 +48,14 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_service_account" "deploy" {
   account_id   = "${local.name}-github-deploy"
   display_name = "GitHub Actions deployment"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Workflows of the repository may act as the service account
 resource "google_service_account_iam_member" "workload_identity" {
@@ -52,6 +64,8 @@ resource "google_service_account_iam_member" "workload_identity" {
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repository}"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Deploy Cloud Run revisions in this project. The images come from ghcr.io
 # through the remote repository of 06-infrastructure-as-code/base, so nobody pushes there.
 resource "google_project_iam_member" "deploy" {
@@ -59,6 +73,8 @@ resource "google_project_iam_member" "deploy" {
   role    = "roles/run.developer"
   member  = google_service_account.deploy.member
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Cloud Run runs the new revision as the service account of 06-infrastructure-as-code/base
 resource "google_service_account_iam_member" "act_as_runtime" {

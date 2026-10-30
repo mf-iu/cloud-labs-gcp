@@ -78,4 +78,4 @@ Die meisten Übungen laufen in Frankfurt (`europe-west3`). Die dauerhaft kostenl
 
 ## Konventionen
 
-Anleitungen auf Deutsch, Skripte, Kommentare und Commit-Messages auf Englisch. Die Shell-Skripte sind mit ShellCheck geprüft (`shellcheck */*.sh`; `cloud-labs-local` muss daneben liegen), die OpenTofu-Dateien mit `tofu fmt`.
+Anleitungen auf Deutsch, Skripte, Kommentare und Commit-Messages auf Englisch. Die Shell-Skripte sind mit ShellCheck geprüft (`shellcheck */*.sh`; `cloud-labs-local` muss daneben liegen), die OpenTofu-Dateien mit `tofu fmt`, die Python-Dateien mit Ruff (`ruff check`, `ruff format`).

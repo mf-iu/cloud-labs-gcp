@@ -1,30 +1,50 @@
 #!/usr/bin/env bash
+
 # Show the automated backups of the Cloud SQL instance: backup configuration,
 # backups and the latest time of a point-in-time restore. Changes nothing.
+#
 # Usage: ./backups.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t06
 check_login
 load_state "$LAB"
 [[ -n "${INSTANCE:-}" ]] || die "No database. Run ./create-db.sh first."
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # minutes between an ISO 8601 time and now
-minutes_ago() {   # minutes_ago <time>
-  python3 -c 'import datetime as d, sys
+# minutes_ago <time>
+minutes_ago() {
+    # The program spans two lines inside the single quotes: now minus the given
+    # time, in minutes
+    python3 -c 'import datetime as d, sys
 print(round((d.datetime.now(d.timezone.utc) - d.datetime.fromisoformat(sys.argv[1])).total_seconds() / 60))' "$1"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Backup configuration of $INSTANCE:"
+# --format yaml(...) prints only this part of the answer, as YAML
 gcloud sql instances describe "$INSTANCE" --format 'yaml(settings.backupConfiguration)'
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 log "Backups (one a day, the latest seven are kept):"
 gcloud sql backups list --instance "$INSTANCE"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# The if checks two things: the command failed, or its output is empty
 if ! latest=$(gcloud sql instances get-latest-recovery-time "$INSTANCE" \
-    --format 'value(latestRecoveryTime)' 2>/dev/null) || [[ -z "$latest" ]]; then
-  warn "No recovery time yet: point-in-time recovery needs a first backup. Try again in a few minutes."
-  exit 0
+        --format 'value(latestRecoveryTime)' 2>/dev/null) || [[ -z "$latest" ]]; then
+    warn "No recovery time yet: point-in-time recovery needs a first backup. Try again in a few minutes."
+    exit 0
 fi
 cat <<INFO
 

@@ -1,9 +1,13 @@
 # Daily GeoNames update as Cloud Run function (2nd gen), called by Cloud
 # Scheduler with an OIDC token. Cloud Build installs the dependencies.
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}-t09"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_project_service" "this" {
   for_each = toset([
@@ -15,6 +19,8 @@ resource "google_project_service" "this" {
   disable_on_destroy = false
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Bucket for the change files and, under source/, the function code
 resource "google_storage_bucket" "data" {
   name                        = "${local.name}-${var.suffix}-data"
@@ -25,12 +31,16 @@ resource "google_storage_bucket" "data" {
   depends_on                  = [google_project_service.this]
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 data "archive_file" "source" {
   type        = "zip"
   source_dir  = "${path.module}/../function"
   output_path = "${path.module}/../build/function.zip"
   excludes    = ["__pycache__", ".venv", "out"]
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # The object name contains the hash, so every code change triggers a new build
 resource "google_storage_bucket_object" "source" {
@@ -39,17 +49,23 @@ resource "google_storage_bucket_object" "source" {
   source = data.archive_file.source.output_path
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Identity of the function: may write objects into the bucket, nothing else
 resource "google_service_account" "function" {
   account_id   = "${local.name}-sync"
   display_name = "GeoNames sync function (lab t09)"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_storage_bucket_iam_member" "function" {
   bucket = google_storage_bucket.data.name
   role   = "roles/storage.objectUser"
   member = google_service_account.function.member
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_cloudfunctions2_function" "sync" {
   name     = "${local.name}-geonames-sync"
@@ -81,11 +97,15 @@ resource "google_cloudfunctions2_function" "sync" {
   depends_on = [google_project_service.this]
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Cloud Scheduler calls the function as this service account
 resource "google_service_account" "scheduler" {
   account_id   = "${local.name}-scheduler"
   display_name = "Cloud Scheduler for the GeoNames sync (lab t09)"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_cloud_run_service_iam_member" "scheduler" {
   location = var.region
@@ -93,6 +113,8 @@ resource "google_cloud_run_service_iam_member" "scheduler" {
   role     = "roles/run.invoker"
   member   = google_service_account.scheduler.member
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_cloud_scheduler_job" "daily" {
   name      = "${local.name}-geonames-daily"

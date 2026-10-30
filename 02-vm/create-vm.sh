@@ -1,44 +1,75 @@
 #!/usr/bin/env bash
+
 # Create a Compute Engine VM that installs and runs PlaceFinder via cloud-init.
 # The VM uses the always free e2-micro in GCP_FREE_ZONE (a US region).
+#
 # Usage: ./create-vm.sh [git ref]   (default ref: t01)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 require_github_user   # PLACEFINDER_IMAGE and PLACEFINDER_REPO need it
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t02
 ref="${1:-t01}"
+# Another zone without changing the script: VM_ZONE=europe-west3-a ./create-
+# vm.sh
 zone="${VM_ZONE:-$GCP_FREE_ZONE}"
 check_login
 check_repo_ref "$PLACEFINDER_REPO" "$ref"
 [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
 enable_apis compute.googleapis.com
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 vm=$(name "$LAB-vm")
 ip=$(my_ip)
 log "Creating firewall rule (SSH and port 8000 from $ip only) ..."
+# The rule applies to every VM with the network tag $vm (--target-tags), only
+# from your own address (/32 means exactly one address)
 gcloud compute firewall-rules create "$(name "$LAB-allow")" --network default \
-  --direction INGRESS --allow tcp:22,tcp:8000 --source-ranges "$ip/32" \
-  --target-tags "$vm" --quiet
+    --direction INGRESS --allow tcp:22,tcp:8000 --source-ranges "$ip/32" \
+    --target-tags "$vm" --quiet
 save_state "$LAB" FIREWALL_RULE "$(name "$LAB-allow")"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# A temporary file for the start script of the VM; trap deletes it when this
+# script ends
 user_data=$(mktemp)
 trap 'rm --force "$user_data"' EXIT
+# Fill repository and ref into cloud-init.yaml; > writes the result into the
+# file
 render "$(dirname "$0")/cloud-init.yaml" "REPO=$PLACEFINDER_REPO" "REF=$ref" >"$user_data"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Creating e2-micro with Ubuntu 24.04 in $zone ..."
+# user-data from the file is the cloud-init script; ssh-keys=ubuntu:<key> lets
+# the user ubuntu log in with your key
 gcloud compute instances create "$vm" --zone "$zone" \
-  --machine-type e2-micro \
-  --image-family ubuntu-2404-lts-amd64 --image-project ubuntu-os-cloud \
-  --boot-disk-size 30GB --boot-disk-type pd-standard \
-  --metadata-from-file "user-data=$user_data" \
-  --metadata "ssh-keys=ubuntu:$(cat "$SSH_PUBLIC_KEY")" \
-  --tags "$vm" --labels "$(labels "$LAB")" --quiet
+    --machine-type e2-micro \
+    --image-family ubuntu-2404-lts-amd64 --image-project ubuntu-os-cloud \
+    --boot-disk-size 30GB --boot-disk-type pd-standard \
+    --metadata-from-file "user-data=$user_data" \
+    --metadata "ssh-keys=ubuntu:$(cat "$SSH_PUBLIC_KEY")" \
+    --tags "$vm" --labels "$(labels "$LAB")" --quiet
 save_state "$LAB" INSTANCE "$vm"
 save_state "$LAB" ZONE "$zone"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# --format value(...) prints only the external address of the first network card
 public_ip=$(gcloud compute instances describe "$vm" --zone "$zone" \
-  --format 'value(networkInterfaces[0].accessConfigs[0].natIP)')
+    --format 'value(networkInterfaces[0].accessConfigs[0].natIP)')
 save_state "$LAB" PUBLIC_IP "$public_ip"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 cat <<INFO
 

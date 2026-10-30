@@ -1,13 +1,29 @@
 #!/usr/bin/env bash
+
 # List resources of the course project that still exist, especially those
 # that cost money by the hour. Deletes nothing.
+#
 # Usage: tools/find-leftovers.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 check_login
-section() { printf '\n\033[1;36m%s\033[0m\n' "$*"; }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+section() {
+    printf '\n\033[1;36m%s\033[0m\n' "$*"
+}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 section "VM instances"
+# --format table(...) prints the chosen fields as a table; basename() keeps the
+# part after the last slash
 gcloud compute instances list --format 'table(name, zone.basename(), machineType.basename(), status)'
 section "Cloud NAT routers and reserved IP addresses"
 gcloud compute routers list --format 'table(name, region.basename(), network.basename())'
@@ -16,6 +32,8 @@ section "Disks and snapshots (cost storage even without a VM)"
 gcloud compute disks list --format 'table(name, zone.basename(), sizeGb, status, users.map().basename().list())'
 gcloud compute snapshots list --format 'table(name, diskSizeGb, sourceDisk.basename(), status)'
 section "Cloud SQL instances"
+# 2>/dev/null || echo: the command fails if the API is not enabled; print a note
+# instead
 gcloud sql instances list --format 'table(name, region, settings.tier, state)' 2>/dev/null || echo "Cloud SQL API not enabled"
 section "Cloud Run services and functions"
 gcloud run services list --format 'table(metadata.name, region, status.url)' 2>/dev/null || echo "Cloud Run API not enabled"

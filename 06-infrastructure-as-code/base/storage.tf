@@ -35,6 +35,8 @@ resource "google_storage_bucket" "data" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Cloud Run cannot pull from ghcr.io directly, but through a remote
 # repository of Artifact Registry in front of it (pull-through cache). The
 # CI pipeline of PlaceFinder pushes to ghcr.io; nobody pushes here.
@@ -64,6 +66,8 @@ resource "google_artifact_registry_repository" "ghcr" {
     }
   }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 locals {
   # ghcr.io/<user>/placefinder -> <region>-docker.pkg.dev/<project>/<repo>/<user>/placefinder

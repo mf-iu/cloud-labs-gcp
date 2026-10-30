@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
+
 # Create a Cloud SQL for PostgreSQL 18 instance (Enterprise edition, shared
 # core db-f1-micro) that only accepts connections from your IP address, with
 # daily backups and point-in-time recovery. Takes about 10 minutes.
+#
 # Usage: ./create-db.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t06
 check_login
@@ -11,24 +18,41 @@ load_state "$LAB"
 [[ -z "${INSTANCE:-}" ]] || die "Instance $INSTANCE exists already. Run ./destroy-db.sh first."
 enable_apis sqladmin.googleapis.com
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Names of deleted instances stay blocked for a week, hence the suffix
+# Cloud SQL blocks the name of a deleted instance for a week: date and time make
+# it new
 instance=$(name "$LAB-db-$(date +%m%d%H%M)")
 password=$(random_password)
 ip=$(my_ip)
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Creating Cloud SQL instance $instance (PostgreSQL 18, db-f1-micro, 10 GB) ..."
+# --authorized-networks: connections only from your own address (/32 means
+# exactly one address)
 gcloud sql instances create "$instance" --region "$GCP_REGION" \
-  --database-version POSTGRES_18 --edition enterprise --tier db-f1-micro \
-  --storage-size 10 --storage-type SSD \
-  --backup --enable-point-in-time-recovery \
-  --root-password "$password" --authorized-networks "$ip/32" \
-  --labels "$(labels "$LAB")" --quiet
+    --database-version POSTGRES_18 --edition enterprise --tier db-f1-micro \
+    --storage-size 10 --storage-type SSD \
+    --backup --enable-point-in-time-recovery \
+    --root-password "$password" --authorized-networks "$ip/32" \
+    --labels "$(labels "$LAB")" --quiet
 save_state "$LAB" INSTANCE "$instance"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 gcloud sql databases create placefinder --instance "$instance" --quiet
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # The instance has a single IP address of type PRIMARY (public)
+# --format value(...) prints only the first IP address
 host=$(gcloud sql instances describe "$instance" --format 'value(ipAddresses[0].ipAddress)')
+# sslmode=require: psql and PlaceFinder connect only with TLS
 save_state "$LAB" DATABASE_URL "postgresql://postgres:$password@$host:5432/placefinder?sslmode=require"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 cat <<INFO
 

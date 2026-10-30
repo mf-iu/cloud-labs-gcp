@@ -17,6 +17,8 @@ terraform {
   backend "gcs" {}
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Credentials: Application Default Credentials
 # (gcloud auth application-default login, see 01-account)
 provider "google" {

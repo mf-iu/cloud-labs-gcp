@@ -1,26 +1,40 @@
 #!/usr/bin/env bash
+
 # Delete everything created by create-vpc.sh, in reverse order.
+#
 # Usage: ./destroy-vpc.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t04
 check_login
 load_state "$LAB"
+# { ...; } groups both commands: they run if there is no saved VPC
 [[ -n "${VPC:-}" ]] || { log "Nothing to delete."; exit 0; }
 confirm "Delete VPC $VPC with subnets, firewall rules, Cloud NAT and test VMs?" || exit 0
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 if [[ -n "${INSTANCES:-}" ]]; then
-  # shellcheck disable=SC2086  # several names on purpose
-  gcloud compute instances delete $INSTANCES --zone "${ZONE:-$GCP_ZONE}" --quiet
+    # $INSTANCES without quotes: each name becomes an argument of its own
+    # shellcheck disable=SC2086  # several names on purpose
+    gcloud compute instances delete $INSTANCES --zone "${ZONE:-$GCP_ZONE}" --quiet
 fi
 if [[ -n "${NAT:-}" ]]; then
-  gcloud compute routers delete "$(name router)" --region "$GCP_REGION" --quiet
+    # Deleting the router deletes its Cloud NAT as well
+    gcloud compute routers delete "$(name router)" --region "$GCP_REGION" --quiet
 fi
+# The loop runs once for each rule of the VPC; a VPC can only be deleted without
+# rules and subnets
 for rule in $(gcloud compute firewall-rules list --filter "network~$VPC\$" --format 'value(name)'); do
-  gcloud compute firewall-rules delete "$rule" --quiet
+    gcloud compute firewall-rules delete "$rule" --quiet
 done
 for subnet in "$(name public)" "$(name app)" "$(name db)"; do
-  gcloud compute networks subnets delete "$subnet" --region "$GCP_REGION" --quiet || true
+    gcloud compute networks subnets delete "$subnet" --region "$GCP_REGION" --quiet || true
 done
 gcloud compute networks delete "$VPC" --quiet
 clear_state "$LAB"

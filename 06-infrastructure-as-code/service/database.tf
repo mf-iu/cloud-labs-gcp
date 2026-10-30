@@ -4,11 +4,15 @@
 # Unlike session 6, it cannot be loaded from your computer; PlaceFinder loads
 # the places itself at startup (DATABASE_INIT, service.tf).
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "random_password" "db" {
   count   = var.enable_database ? 1 : 0
   length  = 24
   special = false
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # The name of a deleted instance stays blocked for about a week; a new
 # random part after every destroy allows destroy and apply in a row
@@ -16,6 +20,8 @@ resource "random_id" "db" {
   count       = var.enable_database ? 1 : 0
   byte_length = 2
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_sql_database_instance" "db" {
   count               = var.enable_database ? 1 : 0
@@ -39,6 +45,8 @@ resource "google_sql_database_instance" "db" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_sql_database" "placefinder" {
   count    = var.enable_database ? 1 : 0
   name     = "placefinder"
@@ -47,6 +55,8 @@ resource "google_sql_database" "placefinder" {
   # database anyway
   deletion_policy = "ABANDON"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # The password in Secret Manager; only the service account may read it
 resource "google_secret_manager_secret" "db" {
@@ -57,11 +67,15 @@ resource "google_secret_manager_secret" "db" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_secret_manager_secret_version" "db" {
   count       = var.enable_database ? 1 : 0
   secret      = google_secret_manager_secret.db[0].id
   secret_data = random_password.db[0].result
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_secret_manager_secret_iam_member" "db" {
   count     = var.enable_database ? 1 : 0
@@ -69,6 +83,8 @@ resource "google_secret_manager_secret_iam_member" "db" {
   role      = "roles/secretmanager.secretAccessor"
   member    = local.base.service_account_member
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Private services access: reserved range and peering to Google's network
 resource "google_compute_global_address" "db" {
@@ -80,6 +96,8 @@ resource "google_compute_global_address" "db" {
   prefix_length = 24
   network       = local.base.network_id
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_service_networking_connection" "db" {
   count                   = var.enable_database ? 1 : 0

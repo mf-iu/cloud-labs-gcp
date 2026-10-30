@@ -8,6 +8,8 @@ locals {
   name = "${var.prefix}-${var.owner}-t08"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_project_service" "this" {
   for_each = toset([
     "compute.googleapis.com", "run.googleapis.com", "artifactregistry.googleapis.com",
@@ -19,11 +21,15 @@ resource "google_project_service" "this" {
   disable_on_destroy = false # other labs use the same APIs
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "google_compute_network" "main" {
   name                    = "${local.name}-vpc"
   auto_create_subnetworks = false
   depends_on              = [google_project_service.this]
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_compute_subnetwork" "this" {
   for_each = {
@@ -38,6 +44,8 @@ resource "google_compute_subnetwork" "this" {
   # reach Google APIs without public IP addresses
   private_ip_google_access = each.key != "public"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Firewall with network tags as in session 4. Cloud Run sends its traffic
 # into private ranges through the subnet app with the tag "app" (service.tf):
@@ -55,6 +63,8 @@ resource "google_compute_firewall" "app_to_db" {
     ports    = ["5432"]
   }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_compute_firewall" "app_deny_vpc" {
   name               = "${local.name}-deny-vpc"

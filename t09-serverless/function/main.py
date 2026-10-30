@@ -13,12 +13,19 @@ from google.cloud import storage
 
 from geonames_sync import parse_day, run
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 logging.getLogger().setLevel(logging.INFO)
 bucket = storage.Client().bucket(os.environ["DATA_BUCKET"])
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def store(key: str, data: bytes) -> None:
     bucket.blob(key).upload_from_string(data)
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 @functions_framework.http

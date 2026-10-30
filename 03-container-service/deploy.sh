@@ -1,23 +1,38 @@
 #!/usr/bin/env bash
+
 # Run the image from push-image.sh on Cloud Run (public, scales to zero).
+#
 # Usage: ./deploy.sh [image]   (default: image pushed by push-image.sh)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t03
 check_login
 enable_apis run.googleapis.com
 load_state "$LAB"
+# The image given as argument, otherwise the one that push-image.sh saved
+# (IMAGE), otherwise empty
 image="${1:-${IMAGE:-}}"
 [[ -n "$image" ]] || die "No image. Run ./push-image.sh first or pass an image."
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 service=$(name placefinder)
 log "Deploying $service with $image ..."
+# --allow-unauthenticated: anyone may call the service, as a public API
 gcloud run deploy "$service" --image "$image" --region "$GCP_REGION" \
-  --port 8000 --cpu 1 --memory 512Mi \
-  --min-instances 0 --max-instances 2 \
-  --allow-unauthenticated --labels "$(labels "$LAB")" --quiet
+    --port 8000 --cpu 1 --memory 512Mi \
+    --min-instances 0 --max-instances 2 \
+    --allow-unauthenticated --labels "$(labels "$LAB")" --quiet
+# --format value(...) prints only the URL
 url=$(gcloud run services describe "$service" --region "$GCP_REGION" --format 'value(status.url)')
 save_state "$LAB" SERVICE_URL "$url"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 cat <<INFO
 

@@ -4,6 +4,8 @@
 # CI pipeline of PlaceFinder pushes the images to ghcr.io; the deploy
 # workflow (deploy.example.yml) rolls out new versions.
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   # with a database: connection string without password, the password comes
   # from Secret Manager as PGPASSWORD (libpq reads it); DATABASE_INIT loads
@@ -13,6 +15,8 @@ locals {
     DATABASE_INIT = "true"
   } : {}
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "google_cloud_run_v2_service" "placefinder" {
   name                 = "${local.name}-placefinder"
