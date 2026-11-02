@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Run query_duckdb.py with the HMAC key of the reader service account.
+# Run query_duckdb.py with the Hash-based Message Authentication Code (HMAC) key
+# of the reader service account.
 #
 # Usage: ./query-duckdb.sh
 

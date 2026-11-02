@@ -1,5 +1,6 @@
 # Object storage as in session 7 (05-storage/create-bucket.sh):
-# private bucket with CORS for the map and lifecycle rules
+# private bucket with Cross-Origin Resource Sharing (CORS) for the map and
+# lifecycle rules
 resource "google_storage_bucket" "data" {
   name                        = "${local.name}-${var.suffix}-data"
   location                    = var.region
@@ -39,7 +40,8 @@ resource "google_storage_bucket" "data" {
 
 # Cloud Run cannot pull from ghcr.io directly, but through a remote
 # repository of Artifact Registry in front of it (pull-through cache). The
-# CI pipeline of PlaceFinder pushes to ghcr.io; nobody pushes here.
+# Continuous Integration (CI) pipeline of PlaceFinder pushes to ghcr.io; nobody
+# pushes here.
 resource "google_artifact_registry_repository" "ghcr" {
   repository_id = "${local.name}-ghcr"
   location      = var.region

@@ -4,10 +4,10 @@
 # ///
 """Query GeoParquet in Cloud Storage with DuckDB.
 
-DuckDB uses the S3-compatible XML API of Cloud Storage with an HMAC key
-(environment variables GCS_HMAC_ID and GCS_HMAC_SECRET, see
-query-duckdb.sh). Overture Maps is queried with BigQuery (bigquery.sh),
-because Overture does not publish its files on Cloud Storage.
+DuckDB uses the S3-compatible XML API of Cloud Storage with a Hash-based
+Message Authentication Code (HMAC) key (environment variables GCS_HMAC_ID and
+GCS_HMAC_SECRET, see query-duckdb.sh). Overture Maps is queried with BigQuery
+(bigquery.sh), because Overture does not publish its files on Cloud Storage.
 
 Usage: uv run query_duckdb.py <bucket>
 """

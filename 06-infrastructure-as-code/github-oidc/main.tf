@@ -1,6 +1,6 @@
 # Keyless deployment from GitHub Actions with Workload Identity Federation:
-# the workflow exchanges its OIDC token for a short-lived token of the
-# service account below (no JSON key).
+# the workflow exchanges its OpenID Connect (OIDC) token for a short-lived token
+# of the service account below (no JSON key).
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

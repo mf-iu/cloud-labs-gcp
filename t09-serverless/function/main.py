@@ -1,7 +1,7 @@
 """Cloud Run function (HTTP) for the daily GeoNames update.
 
-Cloud Scheduler calls it once a day with an OIDC token. A manual call
-may pass ?date=YYYY-MM-DD to process a specific day.
+Cloud Scheduler calls it once a day with an OpenID Connect (OIDC) token. A
+manual call may pass ?date=YYYY-MM-DD to process a specific day.
 """
 
 import json

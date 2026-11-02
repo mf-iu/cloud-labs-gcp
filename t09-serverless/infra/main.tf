@@ -1,5 +1,6 @@
 # Daily GeoNames update as Cloud Run function (2nd gen), called by Cloud
-# Scheduler with an OIDC token. Cloud Build installs the dependencies.
+# Scheduler with an OpenID Connect (OIDC) token. Cloud Build installs the
+# dependencies.
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

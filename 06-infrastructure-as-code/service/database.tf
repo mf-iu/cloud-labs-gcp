@@ -1,6 +1,6 @@
 # Optional PostgreSQL (enable_database = true): Cloud SQL with a private
-# address from the range 10.20.20.0/24 of the VPC of base, without a public
-# one.
+# address from the range 10.20.20.0/24 of the Virtual Private Cloud (VPC) of
+# base, without a public one.
 # Unlike session 6, it cannot be loaded from your computer; PlaceFinder loads
 # the places itself at startup (DATABASE_INIT, service.tf).
 

@@ -1,8 +1,9 @@
 # PlaceFinder on Cloud Run as in session 3: public, scaling to zero. Traffic
 # into private ranges, e.g. to PostgreSQL, goes through the subnet app of the
-# VPC (Direct VPC egress) with the network tag "app" for the firewall. The
-# CI pipeline of PlaceFinder pushes the images to ghcr.io; the deploy
-# workflow (deploy.example.yml) rolls out new versions.
+# Virtual Private Cloud (VPC) (Direct VPC egress) with the network tag "app" for
+# the firewall. The Continuous Integration (CI) pipeline of PlaceFinder pushes
+# the images to ghcr.io; the deploy workflow (deploy.example.yml) rolls out new
+# versions.
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -23,7 +24,7 @@ resource "google_cloud_run_v2_service" "placefinder" {
   location             = var.region
   deletion_protection  = false
   ingress              = "INGRESS_TRAFFIC_ALL"
-  invoker_iam_disabled = true # public API without IAM check
+  invoker_iam_disabled = true # public API without Identity and Access Management (IAM) check
 
   template {
     service_account = local.base.service_account_email

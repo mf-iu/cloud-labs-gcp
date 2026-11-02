@@ -13,7 +13,8 @@ source "$(dirname "$0")/../lib/provider.sh"
 LAB=t04
 check_login
 load_state "$LAB"
-# { ...; } groups both commands: they run if there is no saved VPC
+# { ...; } groups both commands: they run if there is no saved Virtual Private
+# Cloud (VPC)
 [[ -n "${VPC:-}" ]] || { log "Nothing to delete."; exit 0; }
 confirm "Delete VPC $VPC with subnets, firewall rules, Cloud NAT and test VMs?" || exit 0
 
@@ -25,7 +26,8 @@ if [[ -n "${INSTANCES:-}" ]]; then
     gcloud compute instances delete $INSTANCES --zone "${ZONE:-$GCP_ZONE}" --quiet
 fi
 if [[ -n "${NAT:-}" ]]; then
-    # Deleting the router deletes its Cloud NAT as well
+    # Deleting the router deletes its Cloud Network Address Translation (NAT) as
+    # well
     gcloud compute routers delete "$(name router)" --region "$GCP_REGION" --quiet
 fi
 # The loop runs once for each rule of the VPC; a VPC can only be deleted without

@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
 # Create the PlaceFinder network design from session 4 on Google Cloud:
-# custom VPC with public, application and database subnets in GCP_REGION
-# and firewall rules that use network tags instead of subnets.
+# custom Virtual Private Cloud (VPC) with public, application and database
+# subnets in GCP_REGION and firewall rules that use network tags instead of
+# subnets.
 #
 # Usage: ./create-vpc.sh [--with-vm] [--with-nat]
 #   --with-vm   two test VMs: a bastion in the public subnet (SSH from your IP
 #               only) and a VM without external address in the application
 #               subnet (SSH only from the bastion); check with ./check-vpc.sh
-#   --with-nat  Cloud NAT for the application subnet (charged per VM and hour)
+#   --with-nat  Cloud Network Address Translation (NAT) for the application
+#               subnet (charged per VM and hour)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

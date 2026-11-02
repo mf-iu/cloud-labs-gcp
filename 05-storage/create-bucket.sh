@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-# Create a private Cloud Storage bucket with CORS (for map tiles) and
-# lifecycle rules, plus a service account that signs URLs.
+# Create a private Cloud Storage bucket with Cross-Origin Resource Sharing
+# (CORS) for map tiles and lifecycle rules, plus a service account that signs
+# URLs.
 #
 # Usage: ./create-bucket.sh
 

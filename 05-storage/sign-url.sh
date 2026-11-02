@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # Create a signed URL (valid for one hour) and test it: without signature,
-# with a range request and with a CORS preflight of the map. For a PMTiles
-# file, also print the address of the map with these tiles.
+# with a range request and with a Cross-Origin Resource Sharing (CORS) preflight
+# of the map. For a PMTiles file, also print the address of the map with these
+# tiles.
 #
 # Usage: ./sign-url.sh [object]   (default: raw/geonames/cities15000.txt)
 

@@ -17,7 +17,8 @@ source "$(dirname "$0")/../lib/provider.sh"
 LAB=t04
 check_login
 load_state "$LAB"
-# The VPC saved by create-vpc.sh, otherwise its usual name
+# The Virtual Private Cloud (VPC) saved by create-vpc.sh, otherwise its usual
+# name
 vpc="${VPC:-$(name vpc)}"
 gcloud compute networks describe "$vpc" >/dev/null 2>&1 \
     || die "No network. Create it with ./create-vpc.sh first."
@@ -69,7 +70,8 @@ subnet() {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Subnets that Cloud NAT serves (none without --with-nat)
+# Subnets that Cloud Network Address Translation (NAT) serves (none without
+# --with-nat)
 # The subnets that Cloud NAT serves, separated by commas; || true: empty if
 # there is no NAT
 nat_subnets=$(gcloud compute routers nats describe "$(name nat)" --router "$(name router)" \

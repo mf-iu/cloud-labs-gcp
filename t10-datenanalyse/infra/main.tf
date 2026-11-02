@@ -1,5 +1,6 @@
 # Data lake for lab t10: GeoParquet in Cloud Storage, queried with DuckDB
-# (HMAC key) and with BigQuery (external table, schema on read)
+# through a Hash-based Message Authentication Code (HMAC) key and with BigQuery
+# (external table, schema on read)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

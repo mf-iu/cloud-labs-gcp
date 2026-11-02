@@ -1,9 +1,9 @@
-# The network design of session 4 (04-network/create-vpc.sh): custom VPC
-# with a public and an application subnet. Instead of a database subnet,
-# the range 10.20.20.0/24 goes to Cloud SQL (service/database.tf): managed
-# databases live in a network of Google, connected to this VPC by peering
-# (private services access). Part of base, like the APIs: costs nothing and
-# stays until the course ends.
+# The network design of session 4 (04-network/create-vpc.sh): custom Virtual
+# Private Cloud (VPC) with a public and an application subnet. Instead of a
+# database subnet, the range 10.20.20.0/24 goes to Cloud SQL
+# (service/database.tf): managed databases live in a network of Google,
+# connected to this VPC by peering (private services access). Part of base, like
+# the APIs: costs nothing and stays until the course ends.
 locals {
   name = "${var.prefix}-${var.owner}-t08"
 }
