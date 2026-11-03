@@ -1,51 +1,28 @@
 # 05 – Object Storage und verwaltete Datenbank
 
-In Termin 7 kommen die Rohdaten von GeoNames und die Kacheldatei aus [cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage) in den privaten Object Storage von Google Cloud; die Karte von PlaceFinder liest ihre Kacheln von dort, mit zeitlich begrenztem Zugriff, Range Requests und CORS. Die verwaltete PostgreSQL-Datenbank aus Termin 6 ist **Zusatz** – freiwillig und ohne Folgen für spätere Termine; PostGIS lokal steht in [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis).
+In Termin 6 legt dieser Schritt eine verwaltete PostgreSQL-Datenbank mit PostGIS bei Google Cloud an – das ist die **Übung im Termin**. Die Skripte aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis) laden die Orte von GeoNames hinein und prüfen PlaceFinder damit; `with-db.sh` ruft sie mit dieser Datenbank auf. In Termin 7 kommen die Rohdaten von GeoNames und die Kacheldatei aus [cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage) in den privaten Object Storage von Google Cloud; die Karte von PlaceFinder liest ihre Kacheln von dort, mit zeitlich begrenztem Zugriff, Range Requests und CORS.
 
 | Skript | Aufgabe |
 |---|---|
-| `create-bucket.sh`, `destroy-bucket.sh` | ein privater Cloud-Storage-Bucket beim Anbieter, mit CORS und Lebenszyklusregel; Rohdaten hochladen; alles wieder löschen |
-| `upload.sh` | Datei hochladen: `.pmtiles` nach `tiles/`, alles andere nach `raw/` |
-| `sign-url.sh` | Signed URL für eine Stunde, getestet ohne Signatur, mit Range Request und CORS; für PMTiles die Adresse der Karte |
 | `create-db.sh`, `destroy-db.sh` | PostgreSQL 18 beim Anbieter anlegen, nur von der eigenen IP-Adresse erreichbar, und wieder löschen |
 | `backups.sh` | automatische Backups und das Zeitfenster für Point-in-Time Recovery anzeigen; ändert nichts |
 | `with-db.sh` | ein Skript aus `cloud-labs-local/06-postgis` mit dieser Datenbank ausführen, z. B. `./with-db.sh load-cities.sh` |
+| `create-bucket.sh`, `destroy-bucket.sh` | ein privater Cloud-Storage-Bucket beim Anbieter, mit CORS und Lebenszyklusregel; Rohdaten hochladen; alles wieder löschen |
+| `upload.sh` | Datei hochladen: `.pmtiles` nach `tiles/`, alles andere nach `raw/` |
+| `sign-url.sh` | Signed URL für eine Stunde, getestet ohne Signatur, mit Range Request und CORS; für PMTiles die Adresse der Karte |
 
 **Kosten:** Object Storage: Speicher in `europe-west3` ca. 0,023 USD je GB und Monat (das Freikontingent von 5 GB gilt nur in US-Regionen) – bei einigen MB praktisch null, aus dem Guthaben. Datenbank: Edition Enterprise mit dem gemeinsam genutzten Kern `db-f1-micro` und 10 GB SSD ca. 0,015 USD pro Stunde aus dem Guthaben. **Nicht über Nacht laufen lassen.** Shared-Core-Maschinen sind nicht durch das SLA abgedeckt und nur für Tests gedacht.
 
-## Object Storage mit Kacheln (Termin 7)
+## Im Termin: verwaltete Datenbank (Termin 6)
 
-Voraussetzung ist die Kacheldatei `erfurt.pmtiles` aus `cloud-labs-local/07-cache-and-storage/make-tiles.sh`; sie liegt in `cloud-labs-local/.state/data/`.
-
-```bash
-cd /workspaces/cloud-labs-gcp/05-storage
-./create-bucket.sh                                             # Bucket, CORS, Lebenszyklus, Service Account, cities15000
-./upload.sh ../../cloud-labs-local/.state/data/erfurt.pmtiles  # nach tiles/
-./sign-url.sh tiles/erfurt.pmtiles                             # Tests und Adresse der Karte
-./sign-url.sh                                                  # dasselbe für die Rohdaten in raw/geonames/
-./destroy-bucket.sh                                            # danach alles löschen
-```
-
-Die Adresse der Karte, die `sign-url.sh` ausgibt, im Browser öffnen, während PlaceFinder und der Webserver für `frontend/` laufen ([cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage)). Die Karte lädt dann ihre Kacheln direkt aus dem Object Storage des Anbieters – ohne eigenen Server dafür.
-
-**Was die Skripte einstellen:**
-
-- Bucket mit **Uniform Bucket-Level Access** (Rechte nur über IAM, keine ACLs je Objekt) und erzwungener **Public Access Prevention**. Daten im Ruhezustand sind immer verschlüsselt.
-- `cors.json`: GET und HEAD von `http://localhost:5173`, Header `Range`, `ETag`, `Content-Length` und `Content-Range`.
-- `lifecycle.json`: Objekte unter `raw/` werden nach 30 Tagen gelöscht, unvollständige Multipart-Uploads nach einem Tag.
-- Signed URLs brauchen einen privaten Schlüssel. Statt eine Schlüsseldatei herunterzuladen, signiert Google im Auftrag des Service Accounts `pf-<owner>-signer` (Impersonation); dafür erhält das eigene Konto die Rolle *Service Account Token Creator* für genau diesen Service Account. Neue Rechte wirken nach etwa einer Minute.
-
-**Prüfen:** Die Ausgabe von `sign-url.sh` zeigt ohne Signatur `403` – das Objekt ist privat –, mit Signatur und `Range: bytes=0-99` die Antwort `206 Partial Content` mit `Content-Range` und bei der Preflight-Anfrage `Access-Control-Allow-Origin: http://localhost:5173`.
-
-## Zusatz: verwaltete Datenbank (Termin 6)
-
-Freiwillig und ohne Folgen für spätere Termine; die Übung von Termin 6 ist rein lokal ([cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis)). Pflicht wird die verwaltete Datenbank in Termin 8 – dann im privaten Netz, angelegt mit OpenTofu in `06-infrastructure-as-code/service`. Die Instanz wird stündlich abgerechnet; der Ablauf dauert mit Anlegen und Löschen rund 30 Minuten.
+Übung im Termin, rund 60 Minuten zusammen mit dem lokalen Vergleich aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis). `create-db.sh` kurz vor der Pause starten – das Anlegen dauert etwa 10 Minuten und läuft währenddessen. Die Instanz wird stündlich abgerechnet: am Ende löschen, das gehört zur Übung. Der Foliensatz `T06_Lab-Skripte` erklärt die Skripte.
 
 ```bash
 cd /workspaces/cloud-labs-gcp/05-storage
 ./create-db.sh               # Instanz mit autorisiertem Netz = eigene IP, ca. 10 min
 ./with-db.sh load-cities.sh  # dieselben Daten, jetzt über das Internet
 ./with-db.sh query.sh        # Zeiten mit der lokalen Datenbank vergleichen
+./with-db.sh query.sh --interactive   # SHOW max_connections;
 ./with-db.sh test-api.sh     # PlaceFinder lokal, die Daten aus der Cloud
 ./backups.sh                 # Backups und Point-in-Time Recovery
 ./destroy-db.sh              # danach löschen – gehört dazu
@@ -70,6 +47,30 @@ uv run fastapi dev src/placefinder/main.py                # meldet: Using PostGI
 **Backups:** Cloud SQL sichert täglich und behält die letzten sieben Backups. Point-in-Time Recovery schaltet `create-db.sh` mit `--enable-point-in-time-recovery` ein; dann archiviert Cloud SQL auch die Transaktionslogs (sieben Tage). `backups.sh` zeigt die Konfiguration, die Backups und den spätesten Zeitpunkt für eine Wiederherstellung. Wiederhergestellt wird als **Klon**, eine neue Instanz (`gcloud sql instances clone … --point-in-time`); das Skript zeigt den Befehl nur.
 
 In der Konsole unter *SQL* → Instanz: *Overview* (Metriken), *Backups* (automatische Backups, Wiederherstellung auf einen Zeitpunkt), *Query insights*.
+
+## Object Storage mit Kacheln (Termin 7)
+
+Voraussetzung ist die Kacheldatei `erfurt.pmtiles` aus `cloud-labs-local/07-cache-and-storage/make-tiles.sh`; sie liegt in `cloud-labs-local/.state/data/`.
+
+```bash
+cd /workspaces/cloud-labs-gcp/05-storage
+./create-bucket.sh                                             # Bucket, CORS, Lebenszyklus, Service Account, cities15000
+./upload.sh ../../cloud-labs-local/.state/data/erfurt.pmtiles  # nach tiles/
+./sign-url.sh tiles/erfurt.pmtiles                             # Tests und Adresse der Karte
+./sign-url.sh                                                  # dasselbe für die Rohdaten in raw/geonames/
+./destroy-bucket.sh                                            # danach alles löschen
+```
+
+Die Adresse der Karte, die `sign-url.sh` ausgibt, im Browser öffnen, während PlaceFinder und der Webserver für `frontend/` laufen ([cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage)). Die Karte lädt dann ihre Kacheln direkt aus dem Object Storage des Anbieters – ohne eigenen Server dafür.
+
+**Was die Skripte einstellen:**
+
+- Bucket mit **Uniform Bucket-Level Access** (Rechte nur über IAM, keine ACLs je Objekt) und erzwungener **Public Access Prevention**. Daten im Ruhezustand sind immer verschlüsselt.
+- `cors.json`: GET und HEAD von `http://localhost:5173`, Header `Range`, `ETag`, `Content-Length` und `Content-Range`.
+- `lifecycle.json`: Objekte unter `raw/` werden nach 30 Tagen gelöscht, unvollständige Multipart-Uploads nach einem Tag.
+- Signed URLs brauchen einen privaten Schlüssel. Statt eine Schlüsseldatei herunterzuladen, signiert Google im Auftrag des Service Accounts `pf-<owner>-signer` (Impersonation); dafür erhält das eigene Konto die Rolle *Service Account Token Creator* für genau diesen Service Account. Neue Rechte wirken nach etwa einer Minute.
+
+**Prüfen:** Die Ausgabe von `sign-url.sh` zeigt ohne Signatur `403` – das Objekt ist privat –, mit Signatur und `Range: bytes=0-99` die Antwort `206 Partial Content` mit `Content-Range` und bei der Preflight-Anfrage `Access-Control-Allow-Origin: http://localhost:5173`.
 
 ## Typische Probleme
 
